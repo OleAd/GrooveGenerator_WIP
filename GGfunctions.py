@@ -19,12 +19,19 @@ import sys
 test = np.array([[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
 ,[0,0,0,0,1,0,0,0,0,1,1,0,0,0,0,0]
 ,[1,0,0,1,0,0,1,1,0,0,0,0,0,0,0,0]])
+
+
+test = np.array([[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+,[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+,[1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0]])
+
 '''
 
-def generate_midi(inputArray, tempo, saveName):
+def generate_midi(inputArray, tempo, loops, saveName):
 	
 	output = mido.MidiFile(type=1)
 	# default is 480 ticks per beat.
+	tickResolution = 480
 	tempoTicks = mido.bpm2tempo(tempo)
 	
 	
@@ -35,35 +42,45 @@ def generate_midi(inputArray, tempo, saveName):
 	
 	# so, its 480 ticks per beat (quarter note)
 	
-	#one track per!!!
+	# Just a track to set the tempo
 	track = mido.MidiTrack()
 	track.append(mido.MetaMessage('set_tempo', tempo=tempoTicks))
+	track.append(mido.MetaMessage('end_of_track', time=(16 * tickResolution * loops)))
+	
 	output.tracks.append(track)
 	
-	tickResolution = 480
+	# write one track per instrument
+	
+	
 	count=0
+	
+	# hold-time for events
+	# not implemented yet
+	holdTime = int(tempoTicks/32)
+	
+	# generate tracks
 	for key in instrKeys:
 		track = mido.MidiTrack()
-		#track.append(mido.MetaMessage('set_tempo', tempo=tempoTicks))
+		
 		thisInstr = inputArray[count,]
 		count += 1
-		lastEventCount = 0
 		previousEventTime = 0
-		for n in range(0, 16):
-			thisEventTime = n*tickResolution
-			if thisInstr[n] == 1:
-				# insert an event
-				deltaTime = thisEventTime - previousEventTime
-				track.append(mido.Message('note_on', note=key, velocity=100, channel=9, time=deltaTime))
-				#track.append(mido.Message('note_on', note=key, velocity=100, channel=9, time=n*tickResolution))
-				#track.append(mido.Message('note_off', note=key, velocity=100, channel=9, time=int(tickResolution/16)))
-				track.append(mido.Message('note_off', note=key, velocity=100, channel=9, time=0))
-				previousEventTime = thisEventTime
-				#lastEventCount = 0
-			else:
-				lastEventCount += tickResolution
-		
-		track.append(mido.MetaMessage('end_of_track', time=thisEventTime + tickResolution))
+		loopCount = 0
+		for loop in range(0, loops):
+			for n in range(0, 16):
+				thisEventTime = n*tickResolution + (loopCount * tickResolution * 16)
+				if thisInstr[n] == 1:
+					# insert an event
+					deltaTime = thisEventTime - previousEventTime
+					track.append(mido.Message('note_on', note=key, velocity=100, channel=9, time=deltaTime))
+					track.append(mido.Message('note_off', note=key, velocity=0, channel=9, time=0))
+					
+					
+					previousEventTime = thisEventTime
+				#else:
+					#lastEventCount += tickResolution
+			loopCount += 1
+			#track.append(mido.MetaMessage('end_of_track', time=thisEventTime + tickResolution))
 		output.tracks.append(track)		
 			
 	

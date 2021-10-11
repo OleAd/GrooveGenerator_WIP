@@ -28,6 +28,7 @@ class StepSequenceInput(QWidget):
 		super().__init__()
 		
 		self.initUI()
+		self.report_status('Ready.')
 		#self.getPattern()
 		
 	
@@ -93,7 +94,13 @@ class StepSequenceInput(QWidget):
 		
 		clearButton = QPushButton('Reset')
 		clearButton.clicked.connect(self.clear)
-		main_grid.addWidget(clearButton, 2, 2)
+		main_grid.addWidget(clearButton, 4, 4)
+		
+		# loop selection buttons
+		self.loopButton = QSpinBox()
+		self.loopButton.setRange(1, 100)
+		self.loopButton.setValue(1)
+		main_grid.addWidget(self.loopButton, 2, 2)
 		
 		
 		
@@ -124,9 +131,11 @@ class StepSequenceInput(QWidget):
 			if n>31:
 				button.setChecked(True)
 			
-		
+	def report_status(self, status):
+		print(status)
 	
 	def getPattern(self):
+		self.report_status('Generating...')
 		pattern = np.zeros((3,8))
 		
 		count=0
@@ -148,13 +157,16 @@ class StepSequenceInput(QWidget):
 		print(output_array)
 		print(self.tempoField.text())
 		tempo = int(self.tempoField.text())
+		loops = int(self.loopButton.value())
 		
 		midiName = 'stimsMidi/' + self.outputName.text() + '.mid'
 		waveName = 'stimsWAV/' + self.outputName.text() + '.wav'
 		
-		GGfunctions.generate_midi(output_array, tempo, midiName)
-		GGfunctions.write_wav(midiName, waveName)
+		#loops = 2
 		
+		GGfunctions.generate_midi(output_array, tempo, loops, midiName)
+		GGfunctions.write_wav(midiName, waveName)
+		self.report_status('Done! Ready.')
 
 	
 	
