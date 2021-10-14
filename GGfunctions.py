@@ -36,7 +36,7 @@ def generate_midi(inputArray, tempo, loops, saveName):
 	
 	
 	# then write out from the input array
-	# find the midi channels for shit, and keys for sounds
+	# GM drums on channel 10 (9 0-indexed), keys 42 hihat 40 snare 36 kick
 	# go for 40, 50 and 60 now
 	instrKeys = [42, 40, 36]
 	

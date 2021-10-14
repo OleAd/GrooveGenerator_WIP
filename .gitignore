@@ -3,3 +3,4 @@
 *.wav
 *.reapeaks
 *.pyc
+__pycache__/GGfunctions.cpython-38.pyc

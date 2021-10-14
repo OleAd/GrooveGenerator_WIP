@@ -158,12 +158,11 @@ class StepSequenceInput(QWidget):
 		print(self.tempoField.text())
 		tempo = int(self.tempoField.text())
 		loops = int(self.loopButton.value())
+		print('Doing ' + str(loops) + ' loops.')
 		
 		midiName = 'stimsMidi/' + self.outputName.text() + '.mid'
 		waveName = 'stimsWAV/' + self.outputName.text() + '.wav'
-		
-		#loops = 2
-		
+
 		GGfunctions.generate_midi(output_array, tempo, loops, midiName)
 		GGfunctions.write_wav(midiName, waveName)
 		self.report_status('Done! Ready.')
