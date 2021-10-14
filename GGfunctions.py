@@ -32,6 +32,7 @@ def generate_midi(inputArray, tempo, loops, saveName):
 	output = mido.MidiFile(type=1)
 	# default is 480 ticks per beat.
 	tickResolution = 480
+	eventResolution = int(tickResolution / 4)
 	tempoTicks = mido.bpm2tempo(tempo)
 	
 	

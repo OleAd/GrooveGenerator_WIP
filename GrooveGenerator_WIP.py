@@ -9,6 +9,7 @@ Created on Fri Oct  8 16:21:53 2021
 import sys
 import os
 import numpy as np
+import pandas as pd
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from PyQt5.QtCore import *
@@ -22,16 +23,17 @@ import GGfunctions
 #%% Some global variables to start off with
 
 stepNumbers = 32
+bars = 2
 stepChannels = 3
 
-class StepSequenceInput(QWidget):
+class GrooveGenerator(QWidget):
 	
 	def __init__(self):
 		super().__init__()
 		
 		self.initUI()
 		self.report_status('Ready.')
-		#self.getPattern()
+
 		
 	
 	
@@ -46,9 +48,9 @@ class StepSequenceInput(QWidget):
 		instrLabels = ['Beat', 'hihat', 'snare', 'kick']
 		
 		# also add some sort of bar at the top.
-		# lock it at 16?
-		tickLabels = ['1', '', '1.2', '', '2', '', '2.2', '','3', '', '3.2', '','4', '', '4.2', '',
-				'1', '', '1.2', '', '2', '', '2.2', '','3', '', '3.2', '','4', '', '4.2', '']
+		# 2 bars x 16 events
+		tickLabels = ['1.1', '', '', '', '1.2', '', '', '','1.3', '', '', '','1.4', '', '', '',
+				'2.1', '', '', '', '2.2', '', '', '','2.3', '', '', '','2.4', '', '', '']
 		
 		count=0
 		for i in range(0,stepChannels+1):
@@ -69,7 +71,7 @@ class StepSequenceInput(QWidget):
 		main_grid.addLayout(metro_grid, 1, 1, 1, 4)
 		
 		runButton = QPushButton('Run')
-		runButton.clicked.connect(self.getPattern)
+		runButton.clicked.connect(self.processPattern)
 		main_grid.addWidget(runButton, 2, 4)
 		
 		calcButton = QPushButton('Calulate')
@@ -95,6 +97,10 @@ class StepSequenceInput(QWidget):
 		kickButton.clicked.connect(self.kick_on)
 		main_grid.addWidget(kickButton, 4, 2)
 		
+		snareButton = QPushButton('Snare')
+		snareButton.clicked.connect(self.snare_on)
+		main_grid.addWidget(snareButton, 4, 3)
+		
 		clearButton = QPushButton('Reset')
 		clearButton.clicked.connect(self.clear)
 		main_grid.addWidget(clearButton, 4, 4)
@@ -113,32 +119,38 @@ class StepSequenceInput(QWidget):
 		self.setGeometry(50,50,200,200)
 		self.show()
 	
-	def calculate(self):
-		
-		pattern = np.zeros((3,16))
-		
-		count=0
+	
+	
+	
+	def getPattern(self):
+		# gets the pattern as numpy array
 		eventArray = []
 		for n, button in enumerate(self.metro_group.buttons()):
 			event = button.isChecked()
 			eventArray.append(int(event))
 		output_array = np.reshape(eventArray, (stepChannels, stepNumbers))
 		
-		patternA = output_array[1,]
-		patternB = output_array[2,]
+		return output_array
+	
+	
+	def calculate(self):
+		# Calculates and reports the SI
 		
-		#patternA = np.tile(patternA, 4)
-		#patternB = np.tile(patternB, 4)
+		pattern = self.getPattern()
+		patternA = pattern[1,] # snare
+		patternB = pattern[2,] # kick
+		
 		SI = self.syncopationIndex(patternA, patternB)
-		print(SI)
-		self.SIcalc.setText(str(SI))
+
+		self.SIcalc.setText(str(round(SI,3)))
 		
-		print('Will eventually calculate shit')
+		print('Syncopation Index is: ' + str(round(SI,3)))
 		
 	def clear(self):
 		print('Clearing.')
 		for n, button in enumerate(self.metro_group.buttons()):
 			button.setChecked(False)
+			
 			
 	def hihat_on(self):
 		print('Hihatting.')
@@ -154,33 +166,51 @@ class StepSequenceInput(QWidget):
 				
 	def kick_on(self):
 		print('kicking.')
+		step = True
+		count = 0
 		for n, button in enumerate(self.metro_group.buttons()):
 			if n>63:
-				button.setChecked(True)
+				if step:
+					button.setChecked(True)
+					count = 0
+					step = False
+				else:
+					count += 1
+				if count > 2:
+					step = True
+					
+	def snare_on(self):
+		print('kicking.')
+		step = False
+		count = 0
+		for n, button in enumerate(self.metro_group.buttons()):
+			if n>32 and n<64:
+				if step:
+					button.setChecked(True)
+					count = -4
+					step = False
+				else:
+					count += 1
+				if count > 2:
+					step = True
 			
 	def report_status(self, status):
 		print(status)
 	
-	def getPattern(self):
+	def processPattern(self):
 		self.report_status('Generating...')
-		pattern = np.zeros((3,16))
 		
-		count=0
+		'''
 		eventArray = []
 		for n, button in enumerate(self.metro_group.buttons()):
 			event = button.isChecked()
 			eventArray.append(int(event))
 		
 		
-		'''
-		for i in range(0, stepChannels):
-			for j in range(0,stepNumbers):
-				event = self.metro_group.buttons(count).isChecked()
-				pattern[i,j] = event
-				count+=1
-		'''
-		
 		output_array = np.reshape(eventArray, (stepChannels, stepNumbers))
+		'''
+		output_array = self.getPattern()
+		
 		print(output_array)
 		print(self.tempoField.text())
 		tempo = int(self.tempoField.text())
@@ -227,10 +257,6 @@ class StepSequenceInput(QWidget):
 		
 		# weights.
 		w = (0, -3,-2, -3, -1, -3, -2, -3, -1, -3, -2, -3, -1,-3, -2, -3, 0, -3,-2, -3, -1, -3, -2, -3, -1, -3, -2, -3, -1,-3, -2, -3)
-		#w = np.tile(w, 4)
-		#patternA = np.tile(patternA, 4)
-		#patternB = np.tile(patternB, 4)
-		
 		
 		SI = syncopation(patternA,patternB,w,32)
 
@@ -247,7 +273,7 @@ if __name__ == '__main__':
 	
 	
 	app = QApplication(sys.argv)
-	test = StepSequenceInput()
+	test = GrooveGenerator()
 	
 	
 	sys.exit(app.exec_())
