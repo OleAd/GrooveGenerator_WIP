@@ -142,9 +142,15 @@ class StepSequenceInput(QWidget):
 			
 	def hihat_on(self):
 		print('Hihatting.')
+		step=True
 		for n, button in enumerate(self.metro_group.buttons()):
+			
 			if n<32:
-				button.setChecked(True)
+				if step:
+					button.setChecked(True)
+					step = False
+				else:
+					step = True
 				
 	def kick_on(self):
 		print('kicking.')
