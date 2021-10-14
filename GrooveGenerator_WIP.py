@@ -15,11 +15,13 @@ from PyQt5.QtCore import *
 
 import GGfunctions
 
+# Note, make into 32 steps.
+
 
 
 #%% Some global variables to start off with
 
-stepNumbers = 16
+stepNumbers = 32
 stepChannels = 3
 
 class StepSequenceInput(QWidget):
@@ -45,7 +47,8 @@ class StepSequenceInput(QWidget):
 		
 		# also add some sort of bar at the top.
 		# lock it at 16?
-		tickLabels = ['1', '', '1.2', '', '2', '', '2.2', '','3', '', '3.2', '','4', '', '4.2', '']
+		tickLabels = ['1', '', '1.2', '', '2', '', '2.2', '','3', '', '3.2', '','4', '', '4.2', '',
+				'1', '', '1.2', '', '2', '', '2.2', '','3', '', '3.2', '','4', '', '4.2', '']
 		
 		count=0
 		for i in range(0,stepChannels+1):
@@ -111,7 +114,25 @@ class StepSequenceInput(QWidget):
 		self.show()
 	
 	def calculate(self):
-		self.SIcalc.setText('Not implemented')
+		
+		pattern = np.zeros((3,16))
+		
+		count=0
+		eventArray = []
+		for n, button in enumerate(self.metro_group.buttons()):
+			event = button.isChecked()
+			eventArray.append(int(event))
+		output_array = np.reshape(eventArray, (stepChannels, stepNumbers))
+		
+		patternA = output_array[1,]
+		patternB = output_array[2,]
+		
+		#patternA = np.tile(patternA, 4)
+		#patternB = np.tile(patternB, 4)
+		SI = self.syncopationIndex(patternA, patternB)
+		print(SI)
+		self.SIcalc.setText(str(SI))
+		
 		print('Will eventually calculate shit')
 		
 	def clear(self):
@@ -122,13 +143,13 @@ class StepSequenceInput(QWidget):
 	def hihat_on(self):
 		print('Hihatting.')
 		for n, button in enumerate(self.metro_group.buttons()):
-			if n<16:
+			if n<32:
 				button.setChecked(True)
 				
 	def kick_on(self):
 		print('kicking.')
 		for n, button in enumerate(self.metro_group.buttons()):
-			if n>31:
+			if n>63:
 				button.setChecked(True)
 			
 	def report_status(self, status):
@@ -136,7 +157,7 @@ class StepSequenceInput(QWidget):
 	
 	def getPattern(self):
 		self.report_status('Generating...')
-		pattern = np.zeros((3,8))
+		pattern = np.zeros((3,16))
 		
 		count=0
 		eventArray = []
@@ -168,10 +189,48 @@ class StepSequenceInput(QWidget):
 		self.report_status('Done! Ready.')
 
 	
-	
-	
-	
+	def syncopationIndex(self, patternA, patternB):
+		# always calculate for two repeats?
+		# Maria's calculations are done for four repeats.
+		def delta(m,n):
+			if(m > n):
+				return 1
+			else:
+				return 0
+			
+		def phi(a,w,i):
+			j = i - 1
+			if i >= 3 and a[i-1]== 0.0:
+				j = i - 1 - delta(a[i-2],a[i-1])*delta(w[i-2],w[i-1])
+			if i >= 5 and a[i-1]==0.0 and a[i-2]==0.0:
+				j = i - 1 - 3*(delta(a[i-4],a[i-3])*delta(w[i-4],w[i-3])*delta(a[i-4],a[i-2])*delta(w[i-4],w[i-2])*delta(a[i-4],a[i-1])*delta(w[i-4],w[i-1]))
+			return j
+		
+		def syncopation(s,b,w,B):
+			c = 2.8 # optimized parameter that 'governs the relationship between metric weight'
+			d = 1.6 # two-stream syncopation factor, equals d when both instruments are silent on i, otherwise 0
+			h = 1.32 # scaling factor, chosen such that the slope of the linear link function (with perceived syncopation)
+			n = len(w)
+			S = 0
+			for i in range(1,n): 
+				j = phi(s,w,i)
+				k = phi(b,w,i)
+				S = S + (delta(w[i],w[k])*delta(b[k],b[i])*(c**(w[i])-c**(w[k]))
+		              +delta(w[i],w[j])*delta(s[j],s[i])*(c**(w[i])-c**(w[j])))*d**(delta(1,s[i]+b[i]))
+			return S/B*h
+		
+		# weights.
+		w = (0, -3,-2, -3, -1, -3, -2, -3, -1, -3, -2, -3, -1,-3, -2, -3, 0, -3,-2, -3, -1, -3, -2, -3, -1, -3, -2, -3, -1,-3, -2, -3)
+		#w = np.tile(w, 4)
+		#patternA = np.tile(patternA, 4)
+		#patternB = np.tile(patternB, 4)
+		
+		
+		SI = syncopation(patternA,patternB,w,32)
 
+		return SI
+		
+  
 
 if __name__ == '__main__':
 	
