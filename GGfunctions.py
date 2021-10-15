@@ -46,7 +46,7 @@ def generate_midi(inputArray, tempo, loops, saveName):
 	# Just a track to set the tempo
 	track = mido.MidiTrack()
 	track.append(mido.MetaMessage('set_tempo', tempo=tempoTicks))
-	track.append(mido.MetaMessage('end_of_track', time=(32 * tickResolution * loops)))
+	track.append(mido.MetaMessage('end_of_track', time=(32 * eventResolution * loops)))
 	
 	output.tracks.append(track)
 	
@@ -69,7 +69,7 @@ def generate_midi(inputArray, tempo, loops, saveName):
 		loopCount = 0
 		for loop in range(0, loops):
 			for n in range(0, 32):
-				thisEventTime = n*tickResolution + (loopCount * tickResolution * 32)
+				thisEventTime = n*eventResolution + (loopCount * eventResolution * 32)
 				if thisInstr[n] == 1:
 					# insert an event
 					deltaTime = thisEventTime - previousEventTime

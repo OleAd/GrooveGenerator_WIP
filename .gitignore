@@ -6,3 +6,5 @@
 __pycache__/GGfunctions.cpython-38.pyc
 *.pyc
 sync_index.py
+*.pyc
+*.csv

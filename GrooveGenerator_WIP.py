@@ -40,7 +40,14 @@ class GrooveGenerator(QWidget):
 	def initUI(self):
 		main_grid = QGridLayout()
 		metro_grid = QGridLayout()
+		top_grid = QGridLayout()
 		
+		
+		self.statusBox = QLabel('Ready.')
+		top_grid.addWidget(self.statusBox, 1, 1, 1, 4)
+		main_grid.addLayout(top_grid, 1, 1, 1, 4)
+		
+		# grouping the pattern buttons
 		self.metro_group = QButtonGroup()
 		self.metro_group.setExclusive(False)
 		# create the buttons
@@ -62,54 +69,65 @@ class GrooveGenerator(QWidget):
 					metro_grid.addWidget(thisLabel, i, j)
 				else:
 					thisCheck = QCheckBox()
+					thisCheck.clicked.connect(self.calculate)
 					self.metro_group.addButton(thisCheck)
 					self.metro_group.setId(thisCheck, count)
 					metro_grid.addWidget(thisCheck,i,j)
 					count+=1
 		
 		# insert into main grid
-		main_grid.addLayout(metro_grid, 1, 1, 1, 4)
+		main_grid.addLayout(metro_grid, 2, 1, 1, 4)
 		
 		runButton = QPushButton('Run')
 		runButton.clicked.connect(self.processPattern)
-		main_grid.addWidget(runButton, 2, 4)
+		main_grid.addWidget(runButton, 3, 4)
 		
 		calcButton = QPushButton('Calulate')
 		calcButton.clicked.connect(self.calculate)
-		main_grid.addWidget(calcButton, 2, 3)
+		main_grid.addWidget(calcButton, 3, 3)
 		
 		self.tempoField = QLineEdit('120')
-		main_grid.addWidget(self.tempoField, 2, 1)
+		main_grid.addWidget(self.tempoField, 3, 1)
 		
 		self.outputName = QLineEdit('SaveName')
-		main_grid.addWidget(self.outputName, 3, 1, 1, 2)
+		main_grid.addWidget(self.outputName, 4, 1, 1, 2)
 		
 		self.SIcalc = QLineEdit('SyncopationIndex')
-		main_grid.addWidget(self.SIcalc, 3, 3, 1, 2)
+		main_grid.addWidget(self.SIcalc, 4, 3, 1, 2)
 		
 		# hihat button
 		
 		hihatButton = QPushButton('Hihat')
 		hihatButton.clicked.connect(self.hihat_on)
-		main_grid.addWidget(hihatButton, 4, 1)
+		main_grid.addWidget(hihatButton, 5, 1)
 		
 		kickButton = QPushButton('Kick')
 		kickButton.clicked.connect(self.kick_on)
-		main_grid.addWidget(kickButton, 4, 2)
+		main_grid.addWidget(kickButton, 5, 2)
 		
 		snareButton = QPushButton('Snare')
 		snareButton.clicked.connect(self.snare_on)
-		main_grid.addWidget(snareButton, 4, 3)
+		main_grid.addWidget(snareButton, 5, 3)
 		
 		clearButton = QPushButton('Reset')
 		clearButton.clicked.connect(self.clear)
-		main_grid.addWidget(clearButton, 4, 4)
+		main_grid.addWidget(clearButton, 5, 4)
 		
 		# loop selection buttons
 		self.loopButton = QSpinBox()
 		self.loopButton.setRange(1, 100)
 		self.loopButton.setValue(1)
-		main_grid.addWidget(self.loopButton, 2, 2)
+		main_grid.addWidget(self.loopButton, 3, 2)
+		
+		# save button
+		saveButton = QPushButton('Save pattern')
+		saveButton.clicked.connect(self.savePattern)
+		main_grid.addWidget(saveButton, 6, 1, 1, 2)
+		
+		# load button
+		loadButton = QPushButton('Load pattern')
+		loadButton.clicked.connect(self.loadPattern)
+		main_grid.addWidget(loadButton, 6, 3, 1, 2)
 		
 		
 		
@@ -133,6 +151,47 @@ class GrooveGenerator(QWidget):
 		return output_array
 	
 	
+	def savePattern(self):
+		pattern = self.getPattern()
+		colNames = ['hihat', 'snare', 'kick']
+		data = {'hihat':pattern[0,],
+		  'snare':pattern[1,],
+		  'kick':pattern[2,]}
+		pattern_df = pd.DataFrame(data).T
+		
+		name = QFileDialog.getSaveFileName(self, 'Save File', filter='*.csv')
+		print(name)
+		if name[0][-4:] != '.csv':
+			saveName = name[0] + '.csv'
+		else:
+			saveName = name[0]
+		
+		pattern_df.to_csv(saveName)
+		self.report_status('Saved pattern')
+		
+		
+		
+	def loadPattern(self):
+		# this is probably going to fail in many cases, since I don't care to write checks for weird formatting issues
+		name = QFileDialog.getOpenFileName(self, 'Load File', filter='*.csv')
+		
+		try:
+			pattern = pd.read_csv(name[0], index_col=0)
+			#print(pattern)
+			pattern_np = pattern.to_numpy().flatten()
+			
+			assert len(pattern_np) == stepNumbers * stepChannels
+			
+			for n, button in enumerate(self.metro_group.buttons()):
+				button.setChecked(bool(pattern_np[n]))
+			self.report_status('Loaded pattern')
+		except:
+			print('Loading file failed')
+			self.report_status('Loading pattern failed')
+			return
+		
+
+	
 	def calculate(self):
 		# Calculates and reports the SI
 		
@@ -144,7 +203,9 @@ class GrooveGenerator(QWidget):
 
 		self.SIcalc.setText(str(round(SI,3)))
 		
-		print('Syncopation Index is: ' + str(round(SI,3)))
+		#print('Syncopation Index is: ' + str(round(SI,3)))
+		
+		return SI
 		
 	def clear(self):
 		print('Clearing.')
@@ -195,6 +256,7 @@ class GrooveGenerator(QWidget):
 					step = True
 			
 	def report_status(self, status):
+		self.statusBox.setText(status)
 		print(status)
 	
 	def processPattern(self):
@@ -217,8 +279,15 @@ class GrooveGenerator(QWidget):
 		loops = int(self.loopButton.value())
 		print('Doing ' + str(loops) + ' loops.')
 		
-		midiName = 'stimsMidi/' + self.outputName.text() + '.mid'
-		waveName = 'stimsWAV/' + self.outputName.text() + '.wav'
+		SI = self.calculate()
+		SIstring = str(round(SI, 3))
+		#replace comma with something?
+		SIstring = SIstring.replace('.', '_')
+		SIformatted = '-SI-' + SIstring
+		
+		
+		midiName = 'stimsMidi/' + self.outputName.text() + SIformatted + '.mid'
+		waveName = 'stimsWAV/' + self.outputName.text() + SIformatted + '.wav'
 
 		GGfunctions.generate_midi(output_array, tempo, loops, midiName)
 		GGfunctions.write_wav(midiName, waveName)
