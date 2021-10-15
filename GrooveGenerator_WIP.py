@@ -8,6 +8,7 @@ Created on Fri Oct  8 16:21:53 2021
 
 import sys
 import os
+import time
 import numpy as np
 import pandas as pd
 from PyQt5.QtWidgets import *
@@ -122,14 +123,22 @@ class GrooveGenerator(QWidget):
 		# save button
 		saveButton = QPushButton('Save pattern')
 		saveButton.clicked.connect(self.savePattern)
-		main_grid.addWidget(saveButton, 6, 1, 1, 2)
+		main_grid.addWidget(saveButton, 6, 1)
 		
 		# load button
 		loadButton = QPushButton('Load pattern')
 		loadButton.clicked.connect(self.loadPattern)
-		main_grid.addWidget(loadButton, 6, 3, 1, 2)
+		main_grid.addWidget(loadButton, 6, 2)
 		
+		# generate button
+		generateButton = QPushButton('Generate pattern')
+		generateButton.clicked.connect(self.generateRandomPattern)
+		main_grid.addWidget(generateButton, 6, 3)
 		
+		# search pattern button
+		searchButton = QPushButton('Search pattern')
+		searchButton.clicked.connect(self.searchPattern)
+		main_grid.addWidget(searchButton, 6, 4)
 		
 		
 		self.setLayout(main_grid)
@@ -190,7 +199,67 @@ class GrooveGenerator(QWidget):
 			self.report_status('Loading pattern failed')
 			return
 		
+	def generateRandomPattern(self, verbose=True):
+		# just a simple random pattern with some contraints
+		
+		maxEvents = 20
+		minEvents = 4
+		
+		# set the hi-hat first
+		hihat = np.array([1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0,
+		        1, 0, 1, 0, 1, 0, 1, 0, 1, 0])
+		
+		# generate snare
+		# need to bias towards not generating events it seems
+		generate = True
+		while generate:
+			snare = np.random.randint(0, 1+1, 32)
+			if sum(snare) >= minEvents and sum(snare) <= maxEvents:
+				generate = False
+				
+		# generate kick
+		# need to bias towards not generating events it seems
+		generate = True
+		while generate:
+			kick = np.random.randint(0, 1+1, 32)
+			if sum(kick) >= minEvents and sum(kick) <= maxEvents:
+				generate = False
+		
+		pattern = np.array([hihat, snare, kick]).flatten()
+		for n, button in enumerate(self.metro_group.buttons()):
+			button.setChecked(bool(pattern[n]))
+		if verbose:
+			self.report_status('Generated pattern')
+		return pattern
+	
+	def searchPattern(self):
+		target, ok = QInputDialog.getText(self, 'Search for SI', 'Target SI:')
+		if not ok:
+			return
+		
+		target = float(target)
 
+		#target = 0.3
+		generate = True
+		waitTime = 60
+		timeStart = time.time()
+		self.report_status('Searching for pattern')
+		count = 0
+		while generate:
+			count += 1
+			thisPattern = self.generateRandomPattern(verbose=False)
+			thisSI = self.calculate()
+			
+			if thisSI >= target*0.9 and thisSI <= target*1.1:
+				generate = False
+				self.report_status('Pattern found.')
+			timeNow = time.time()
+			if (timeNow-timeStart) > 10:
+				generate=False
+				self.report_status('Failed, tested ' + str(count) + ' patterns.')
+			
+			
+			
 	
 	def calculate(self):
 		# Calculates and reports the SI
@@ -262,15 +331,6 @@ class GrooveGenerator(QWidget):
 	def processPattern(self):
 		self.report_status('Generating...')
 		
-		'''
-		eventArray = []
-		for n, button in enumerate(self.metro_group.buttons()):
-			event = button.isChecked()
-			eventArray.append(int(event))
-		
-		
-		output_array = np.reshape(eventArray, (stepChannels, stepNumbers))
-		'''
 		output_array = self.getPattern()
 		
 		print(output_array)
