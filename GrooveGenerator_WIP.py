@@ -43,17 +43,21 @@ class GrooveGenerator(QWidget):
 		metro_grid = QGridLayout()
 		top_grid = QGridLayout()
 		
-		
+		statusLabel = QLabel('Status: ')
+		top_grid.addWidget(statusLabel, 1, 1)
 		self.statusBox = QLabel('Ready.')
-		top_grid.addWidget(self.statusBox, 1, 1, 1, 4)
+		top_grid.addWidget(self.statusBox, 1, 2, 1, 3)
+
+		
 		main_grid.addLayout(top_grid, 1, 1, 1, 4)
+
 		
 		# grouping the pattern buttons
 		self.metro_group = QButtonGroup()
 		self.metro_group.setExclusive(False)
 		# create the buttons
 		# remember add a text field as well.
-		instrLabels = ['Beat', 'hihat', 'snare', 'kick']
+		instrLabels = ['Beat', 'Hihat', 'Snare', 'Kick']
 		
 		# also add some sort of bar at the top.
 		# 2 bars x 16 events
@@ -79,7 +83,7 @@ class GrooveGenerator(QWidget):
 		# insert into main grid
 		main_grid.addLayout(metro_grid, 2, 1, 1, 4)
 		
-		runButton = QPushButton('Run')
+		runButton = QPushButton('Process pattern')
 		runButton.clicked.connect(self.processPattern)
 		main_grid.addWidget(runButton, 3, 4)
 		
@@ -87,11 +91,20 @@ class GrooveGenerator(QWidget):
 		calcButton.clicked.connect(self.calculate)
 		main_grid.addWidget(calcButton, 3, 3)
 		
-		self.tempoField = QLineEdit('120')
+		
+		self.tempoField = QSpinBox()
+		self.tempoField.setRange(30, 300)
+		self.tempoField.setValue(120)
 		main_grid.addWidget(self.tempoField, 3, 1)
 		
-		self.outputName = QLineEdit('SaveName')
-		main_grid.addWidget(self.outputName, 4, 1, 1, 2)
+		# loop selection buttons
+		self.loopButton = QSpinBox()
+		self.loopButton.setRange(1, 100)
+		self.loopButton.setValue(1)
+		main_grid.addWidget(self.loopButton, 3, 2)
+		
+		#self.outputName = QLineEdit('SaveName')
+		#main_grid.addWidget(self.outputName, 4, 1, 1, 2)
 		
 		self.SIcalc = QLineEdit('SyncopationIndex')
 		main_grid.addWidget(self.SIcalc, 4, 3, 1, 2)
@@ -114,11 +127,7 @@ class GrooveGenerator(QWidget):
 		clearButton.clicked.connect(self.clear)
 		main_grid.addWidget(clearButton, 5, 4)
 		
-		# loop selection buttons
-		self.loopButton = QSpinBox()
-		self.loopButton.setRange(1, 100)
-		self.loopButton.setValue(1)
-		main_grid.addWidget(self.loopButton, 3, 2)
+		
 		
 		# save button
 		saveButton = QPushButton('Save pattern')
@@ -233,7 +242,8 @@ class GrooveGenerator(QWidget):
 		return pattern
 	
 	def searchPattern(self):
-		target, ok = QInputDialog.getText(self, 'Search for SI', 'Target SI:')
+		target, ok = QInputDialog.getDouble(self, 'Search for SI', 'Target SI:', 0.1, 0.0, 150.0, 3, Qt.WindowFlags(), 0.01)
+		
 		if not ok:
 			return
 		
@@ -285,8 +295,7 @@ class GrooveGenerator(QWidget):
 	def hihat_on(self):
 		print('Hihatting.')
 		step=True
-		for n, button in enumerate(self.metro_group.buttons()):
-			
+		for n, button in enumerate(self.metro_group.buttons()):			
 			if n<32:
 				if step:
 					button.setChecked(True)
@@ -331,6 +340,14 @@ class GrooveGenerator(QWidget):
 	def processPattern(self):
 		self.report_status('Generating...')
 		
+		# get savename here
+		text, ok = QInputDialog().getText(self, "Process",
+                                     "Input name of pattern:", QLineEdit.Normal)
+		if not ok:
+			return
+		text.replace(' ', '')
+		
+		
 		output_array = self.getPattern()
 		
 		print(output_array)
@@ -346,8 +363,12 @@ class GrooveGenerator(QWidget):
 		SIformatted = '-SI-' + SIstring
 		
 		
-		midiName = 'stimsMidi/' + self.outputName.text() + SIformatted + '.mid'
-		waveName = 'stimsWAV/' + self.outputName.text() + SIformatted + '.wav'
+		#midiName = 'stimsMidi/' + self.outputName.text() + SIformatted + '.mid'
+		#waveName = 'stimsWAV/' + self.outputName.text() + SIformatted + '.wav'
+		
+		midiName = 'stimsMidi/' + text + SIformatted + '.mid'
+		waveName = 'stimsWAV/' + text + SIformatted + '.wav'
+		
 
 		GGfunctions.generate_midi(output_array, tempo, loops, midiName)
 		GGfunctions.write_wav(midiName, waveName)
