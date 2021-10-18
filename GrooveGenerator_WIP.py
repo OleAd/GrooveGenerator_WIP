@@ -199,7 +199,7 @@ class GrooveGenerator(QWidget):
 		self.setLayout(main_grid)
 		self.setWindowTitle("Groove Generator")
 		self.setGeometry(50,50,200,200)
-		self.show()
+		#self.show()
 	
 	
 	
@@ -576,7 +576,9 @@ if __name__ == '__main__':
 	app = QApplication(sys.argv)
 	qtmodern.styles.dark(app)
 
-	test = GrooveGenerator()
+	window = GrooveGenerator()
+	mw = qtmodern.windows.ModernWindow(window)
+	mw.show()
 	
 	
 	sys.exit(app.exec_())

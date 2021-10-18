@@ -12,7 +12,7 @@ import glob
 import subprocess
 import time
 #import random
-#import numpy as np
+import numpy as np
 #import pandas as pd
 import sys
 '''
@@ -98,5 +98,14 @@ def write_wav(midiName, name):
 	# This doesn't always play nice, but it's solved by simply letting it sleep a bit.
 	# I've not tested without the sleep, so it could possible work without it.
 	time.sleep(1)
+	
+	return
+
+def normalize(name):
+	# yeah no, I'll fix this later
+	unnormal = np.fromfile(name, dtype='int16')
+	normalized = np.array([unnormal / np.max(np.abs(unnormal)) * 32767], np.int16)
+	
+	
 	
 	return
