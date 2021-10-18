@@ -317,6 +317,7 @@ class GrooveGenerator(QWidget):
 		
 		if verbose:
 			self.report_status('Generated pattern')
+		self.calculate()
 		return pattern
 	
 	def searchPattern(self):
