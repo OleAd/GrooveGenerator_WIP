@@ -21,6 +21,18 @@ import GGfunctions
 
 
 
+# To add:
+'''
+Number of events, per instrument, or total? Go for total.
+Maria's syncopation index, both at the same time.
+Hoesl's SI = hSI
+Maria's = wSI
+
+Normalization of wav files?
+'''
+
+
+
 #%% Some global variables to start off with
 
 stepNumbers = 32
@@ -49,7 +61,7 @@ class GrooveGenerator(QWidget):
 		top_grid.addWidget(self.statusBox, 1, 2, 1, 3)
 
 		
-		main_grid.addLayout(top_grid, 1, 1, 1, 4)
+		main_grid.addLayout(top_grid, 1, 1, 1, 6)
 
 		
 		# grouping the pattern buttons
@@ -81,73 +93,93 @@ class GrooveGenerator(QWidget):
 					count+=1
 		
 		# insert into main grid
-		main_grid.addLayout(metro_grid, 2, 1, 1, 4)
+		main_grid.addLayout(metro_grid, 2, 1, 1, 6)
 		
-		runButton = QPushButton('Process pattern')
-		runButton.clicked.connect(self.processPattern)
-		main_grid.addWidget(runButton, 3, 4)
 		
-		calcButton = QPushButton('Calulate')
-		calcButton.clicked.connect(self.calculate)
-		main_grid.addWidget(calcButton, 3, 3)
 		
+	
+		
+		
+		tempoLabel = QLabel('BPM:')
+		main_grid.addWidget(tempoLabel, 3, 1)
 		
 		self.tempoField = QSpinBox()
 		self.tempoField.setRange(30, 300)
 		self.tempoField.setValue(120)
-		main_grid.addWidget(self.tempoField, 3, 1)
+		main_grid.addWidget(self.tempoField, 3, 2)
 		
+		
+		loopLabel = QLabel('Loops:')
+		main_grid.addWidget(loopLabel, 3, 3)
 		# loop selection buttons
 		self.loopButton = QSpinBox()
 		self.loopButton.setRange(1, 100)
 		self.loopButton.setValue(1)
-		main_grid.addWidget(self.loopButton, 3, 2)
+		main_grid.addWidget(self.loopButton, 3, 4)
 		
 		#self.outputName = QLineEdit('SaveName')
 		#main_grid.addWidget(self.outputName, 4, 1, 1, 2)
 		
-		self.SIcalc = QLineEdit('SyncopationIndex')
-		main_grid.addWidget(self.SIcalc, 4, 3, 1, 2)
+		
 		
 		# hihat button
 		
+		insertFillLabel = QLabel('Autofill:')
+		main_grid.addWidget(insertFillLabel, 4, 1)
+		
 		hihatButton = QPushButton('Hihat')
 		hihatButton.clicked.connect(self.hihat_on)
-		main_grid.addWidget(hihatButton, 5, 1)
+		main_grid.addWidget(hihatButton, 4, 2)
 		
 		kickButton = QPushButton('Kick')
 		kickButton.clicked.connect(self.kick_on)
-		main_grid.addWidget(kickButton, 5, 2)
+		main_grid.addWidget(kickButton, 4, 3)
 		
 		snareButton = QPushButton('Snare')
 		snareButton.clicked.connect(self.snare_on)
-		main_grid.addWidget(snareButton, 5, 3)
+		main_grid.addWidget(snareButton, 4, 4)
 		
 		clearButton = QPushButton('Reset')
 		clearButton.clicked.connect(self.clear)
-		main_grid.addWidget(clearButton, 5, 4)
+		main_grid.addWidget(clearButton, 4, 5)
 		
 		
 		
-		# save button
-		saveButton = QPushButton('Save pattern')
-		saveButton.clicked.connect(self.savePattern)
-		main_grid.addWidget(saveButton, 6, 1)
+		
 		
 		# load button
 		loadButton = QPushButton('Load pattern')
 		loadButton.clicked.connect(self.loadPattern)
-		main_grid.addWidget(loadButton, 6, 2)
+		main_grid.addWidget(loadButton, 5, 1)
+		
+		# save button
+		saveButton = QPushButton('Save pattern')
+		saveButton.clicked.connect(self.savePattern)
+		main_grid.addWidget(saveButton, 5, 2)
+		
+		SIlabel = QLabel('Syncopation Index:')
+		main_grid.addWidget(SIlabel, 5, 3)
+		self.SIcalc = QLineEdit('N/A')
+		main_grid.addWidget(self.SIcalc, 5, 4)
+		
+		calcButton = QPushButton('Recalculate SI')
+		calcButton.clicked.connect(self.calculate)
+		main_grid.addWidget(calcButton, 5, 5)
 		
 		# generate button
 		generateButton = QPushButton('Generate pattern')
 		generateButton.clicked.connect(self.generateRandomPattern)
-		main_grid.addWidget(generateButton, 6, 3)
+		main_grid.addWidget(generateButton, 6, 1)
 		
 		# search pattern button
 		searchButton = QPushButton('Search pattern')
 		searchButton.clicked.connect(self.searchPattern)
-		main_grid.addWidget(searchButton, 6, 4)
+		main_grid.addWidget(searchButton, 6, 2)
+		
+		# process pattern
+		runButton = QPushButton('Process pattern')
+		runButton.clicked.connect(self.processPattern)
+		main_grid.addWidget(runButton, 6, 4, 1, 2)
 		
 		
 		self.setLayout(main_grid)
@@ -414,6 +446,14 @@ class GrooveGenerator(QWidget):
 		
 		SI = syncopation(patternA,patternB,w,32)
 
+		return SI
+	
+	
+	def syncopationIndexWitek(self, patternA, patternB):
+		
+		
+		SI = 1
+		
 		return SI
 		
   
