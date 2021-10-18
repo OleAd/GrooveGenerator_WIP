@@ -17,6 +17,11 @@ from PyQt5.QtCore import *
 
 import GGfunctions
 
+# some style
+
+import qtmodern.styles
+import qtmodern.windows
+
 # Note, make into 32 steps.
 
 
@@ -192,7 +197,7 @@ class GrooveGenerator(QWidget):
 		
 		
 		self.setLayout(main_grid)
-		self.setWindowTitle("GrooveGenerator")
+		self.setWindowTitle("Groove Generator")
 		self.setGeometry(50,50,200,200)
 		self.show()
 	
@@ -569,6 +574,8 @@ if __name__ == '__main__':
 	
 	
 	app = QApplication(sys.argv)
+	qtmodern.styles.dark(app)
+
 	test = GrooveGenerator()
 	
 	
