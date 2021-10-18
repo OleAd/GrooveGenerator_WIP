@@ -27,7 +27,6 @@ Number of events, per instrument, or total? Go for total.
 Maria's syncopation index, both at the same time.
 Hoesl's SI = hSI
 Maria's = wSI
-
 Normalization of wav files?
 '''
 
@@ -120,7 +119,11 @@ class GrooveGenerator(QWidget):
 		#self.outputName = QLineEdit('SaveName')
 		#main_grid.addWidget(self.outputName, 4, 1, 1, 2)
 		
+		eventLabel = QLabel('nEvents:')
+		main_grid.addWidget(eventLabel, 3, 5)
 		
+		self.eventCount = QLabel('')
+		main_grid.addWidget(self.eventCount, 3, 6)
 		
 		# hihat button
 		
@@ -157,14 +160,16 @@ class GrooveGenerator(QWidget):
 		saveButton.clicked.connect(self.savePattern)
 		main_grid.addWidget(saveButton, 5, 2)
 		
-		SIlabel = QLabel('Syncopation Index:')
-		main_grid.addWidget(SIlabel, 5, 3)
-		self.SIcalc = QLineEdit('N/A')
-		main_grid.addWidget(self.SIcalc, 5, 4)
+		SIlabelH = QLabel('Hoesl\'s SI:')
+		main_grid.addWidget(SIlabelH, 5, 3)
+		self.SIcalcH = QLabel('N/A')
+		main_grid.addWidget(self.SIcalcH, 5, 4)
+		SIlabelW = QLabel('Witek\'s SI:')
+		main_grid.addWidget(SIlabelW, 5, 5)
+		self.SIcalcW = QLabel('N/A')
+		main_grid.addWidget(self.SIcalcW, 5, 6)
 		
-		calcButton = QPushButton('Recalculate SI')
-		calcButton.clicked.connect(self.calculate)
-		main_grid.addWidget(calcButton, 5, 5)
+		
 		
 		# generate button
 		generateButton = QPushButton('Generate pattern')
@@ -176,10 +181,14 @@ class GrooveGenerator(QWidget):
 		searchButton.clicked.connect(self.searchPattern)
 		main_grid.addWidget(searchButton, 6, 2)
 		
+		calcButton = QPushButton('Recalculate SI')
+		calcButton.clicked.connect(self.calculate)
+		main_grid.addWidget(calcButton, 6, 3)
+		
 		# process pattern
 		runButton = QPushButton('Process pattern')
 		runButton.clicked.connect(self.processPattern)
-		main_grid.addWidget(runButton, 6, 4, 1, 2)
+		main_grid.addWidget(runButton, 6, 5, 1, 2)
 		
 		
 		self.setLayout(main_grid)
@@ -210,7 +219,7 @@ class GrooveGenerator(QWidget):
 		pattern_df = pd.DataFrame(data).T
 		
 		name = QFileDialog.getSaveFileName(self, 'Save File', filter='*.csv')
-		print(name)
+		#print(name)
 		if name[0][-4:] != '.csv':
 			saveName = name[0] + '.csv'
 		else:
@@ -239,17 +248,35 @@ class GrooveGenerator(QWidget):
 			print('Loading file failed')
 			self.report_status('Loading pattern failed')
 			return
+	
+	def countEvents(self, hihats=False):
+		pattern = self.getPattern()
 		
+		if hihats:
+			events = sum(pattern.flatten())
+			print(events)
+		else:
+			snares = pattern[1,]
+			kicks = pattern[2,]
+			both = np.array([snares, kicks]).flatten()
+			events = sum(both)
+		
+		
+		return events
+	
+	
 	def generateRandomPattern(self, verbose=True):
 		# just a simple random pattern with some contraints
 		
-		maxEvents = 14
-		minEvents = 4
+		maxEvents = 20
+		minEvents = 10
+		# collapse over both instruments? Total between 12 and 18?
 		
 		# set the hi-hat first
 		hihat = np.array([1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0,
 		        1, 0, 1, 0, 1, 0, 1, 0, 1, 0])
 		
+		'''
 		# generate snare
 		# need to bias towards not generating events it seems
 		generate = True
@@ -267,18 +294,54 @@ class GrooveGenerator(QWidget):
 			kick = np.round(1-np.random.power(1,32)).astype(int)
 			if sum(kick) >= minEvents and sum(kick) <= maxEvents:
 				generate = False
+		'''
+		# now generating them both together
+		generate = True
+		while generate:
+			#snare = np.random.randint(0, 1+1, 32)
+			snare = np.round(1-np.random.power(1,32)).astype(int)
+			kick = np.round(1-np.random.power(1,32)).astype(int)
+			both = np.array([snare, kick]).flatten()
+			if sum(both) >= minEvents and sum(both) <= maxEvents:
+				generate = False
 		
 		pattern = np.array([hihat, snare, kick]).flatten()
 		for n, button in enumerate(self.metro_group.buttons()):
 			button.setChecked(bool(pattern[n]))
-			
+		
+		
 		if verbose:
 			self.report_status('Generated pattern')
 		return pattern
 	
 	def searchPattern(self):
 		self.report_status('Searching for pattern')
-		target, ok = QInputDialog.getDouble(self, 'Search for SI', 'Target SI:', 0.1, 0.0, 150.0, 3, Qt.WindowFlags(), 0.01)
+		
+		# first get which measure
+		measure, ok = QInputDialog.getItem(self, 'Select', 'Select SI measure:', ['Hoesl\'s', 'Witek\'s'], 0, False)
+		
+		if not ok:
+			return
+		
+		if measure == 'Hoesl\'s':
+			defaultValue = 0.1
+			minValue = 0.0
+			maxValue = 150.0
+			decimals = 3
+			steps = 0.01
+			select = 0
+		elif measure == 'Witek\'s':
+			defaultValue = 10.0
+			minValue = 0.0
+			maxValue = 150.0
+			decimals = 1
+			steps = 0.05
+			select = 1
+		
+		
+		
+		
+		target, ok = QInputDialog.getDouble(self, 'Search for SI', 'Target SI:', defaultValue, minValue, maxValue, decimals, Qt.WindowFlags(), steps)
 		
 		if not ok:
 			return
@@ -294,7 +357,8 @@ class GrooveGenerator(QWidget):
 		while generate:
 			count += 1
 			thisPattern = self.generateRandomPattern(verbose=False)
-			thisSI = self.calculate()
+			SIs = self.calculate()
+			thisSI = SIs[select]
 			
 			if thisSI >= target*0.9 and thisSI <= target*1.1:
 				generate = False
@@ -314,13 +378,18 @@ class GrooveGenerator(QWidget):
 		patternA = pattern[1,] # snare
 		patternB = pattern[2,] # kick
 		
-		SI = self.syncopationIndex(patternA, patternB)
+		hSI = self.syncopationIndexHoesl(patternA, patternB)
+		wSI = self.syncopationIndexWitek(patternA, patternB)
 
-		self.SIcalc.setText(str(round(SI,3)))
+		self.SIcalcH.setText(str(round(hSI,3)))
+		self.SIcalcW.setText(str(round(wSI,3)))
+		
+		events = self.countEvents()
+		self.eventCount.setText(str(events))
 		
 		#print('Syncopation Index is: ' + str(round(SI,3)))
 		
-		return SI
+		return hSI, wSI
 		
 	def clear(self):
 		print('Clearing.')
@@ -393,17 +462,23 @@ class GrooveGenerator(QWidget):
 		print('Doing ' + str(loops) + ' loops.')
 		
 		SI = self.calculate()
-		SIstring = str(round(SI, 3))
+		hSI = SI[0]
+		wSI = SI[1]
+		hSIstring = str(round(hSI, 3))
+		wSIstring = str(round(wSI, 3))
 		#replace comma with something?
-		SIstring = SIstring.replace('.', '_')
-		SIformatted = '-SI-' + SIstring
+		hSIstring = hSIstring.replace('.', '_')
+		hSIformatted = '-hSI-' +hSIstring
+		
+		wSIstring = wSIstring.replace('.', '_')
+		wSIformatted = '-hSI-' +wSIstring
 		
 		
 		#midiName = 'stimsMidi/' + self.outputName.text() + SIformatted + '.mid'
 		#waveName = 'stimsWAV/' + self.outputName.text() + SIformatted + '.wav'
 		
-		midiName = 'stimsMidi/' + text + SIformatted + '.mid'
-		waveName = 'stimsWAV/' + text + SIformatted + '.wav'
+		midiName = 'stimsMidi/' + text + hSIformatted + wSIformatted + '.mid'
+		waveName = 'stimsWAV/' + text + hSIformatted + wSIformatted + '.wav'
 		
 
 		GGfunctions.generate_midi(output_array, tempo, loops, midiName)
@@ -411,7 +486,7 @@ class GrooveGenerator(QWidget):
 		self.report_status('Done! Ready.')
 
 	
-	def syncopationIndex(self, patternA, patternB):
+	def syncopationIndexHoesl(self, patternA, patternB):
 		# always calculate for two repeats?
 		# Maria's calculations are done for four repeats.
 		def delta(m,n):
@@ -450,9 +525,36 @@ class GrooveGenerator(QWidget):
 	
 	
 	def syncopationIndexWitek(self, patternA, patternB):
+		# weights.
+		w = (0, -3,-2, -3, -1, -3, -2, -3, -1, -3, -2, -3, -1,-3, -2, -3, 0, -3,-2, -3, -1, -3, -2, -3, -1, -3, -2, -3, -1,-3, -2, -3)
 		
+		def delta(m,n):
+			if(m > n):
+				return 1
+			else:
+				return 0
+			
+		def phi(a,w,i):
+			j = i - 1
+			if i >= 3 and a[i-1]== 0.0:
+				j = i - 1 - delta(a[i-2],a[i-1])*delta(w[i-2],w[i-1])
+			if i >= 5 and a[i-1]==0.0 and a[i-2]==0.0:
+				j = i - 1 - 3*(delta(a[i-4],a[i-3])*delta(w[i-4],w[i-3])*delta(a[i-4],a[i-2])*delta(w[i-4],w[i-2])*delta(a[i-4],a[i-1])*delta(w[i-4],w[i-1]))
+			return j
 		
-		SI = 1
+		n = len(w)
+		S = 0
+		for i in range(1, n):
+			j = phi(patternA,w,i)
+			k = phi(patternB,w,i)
+			Swb = delta(w[i],w[k])*delta(patternB[k],patternB[i])
+			Sws = delta(w[i],w[j])*delta(patternA[j],patternA[i])
+			Swb1 = delta(1, Swb)
+			Wb = w[i] - w[k] + 2 + 3*delta(1,patternA[i]+patternB[i])
+			Ws = w[i] - w[j] + 1 + 4*delta(1,patternA[i]+patternB[i])
+			S = S + Swb*Wb + Sws*Ws*Swb1
+			
+		SI = S
 		
 		return SI
 		
