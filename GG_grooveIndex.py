@@ -3,6 +3,8 @@
 Created on Tue Oct 19 09:48:44 2021
 
 @author: olehe
+
+DO NOT USE FOR ANYTHING
 """
 import os
 import numpy as np
@@ -73,10 +75,12 @@ def grooveIndex(patternA, patternB,events):
 	eventsPos = eventsPos.astype(int)
 	
 	# just hardcoding in 0 at expected events just to check
+	'''
 	snareWeights[500] = 0
 	snareWeights[1500] = 0
 	kickWeights[0] = 0
 	kickWeights[1000] = 0
+	'''
 	
 	predsSnare = snareWeights[eventsPos[firstSnare==1]]
 	predsKick = kickWeights[eventsPos[firstKick==1]]
@@ -91,6 +95,7 @@ def grooveIndex(patternA, patternB,events):
 	#GI = np.median(predsAll)
 	#GI = gmean(predsAll)
 	GI = predsAll.mean()
+	#GI = sum(predsAll)
 	#a = predsAll/events
 	#GI = a.mean()
 	return GI

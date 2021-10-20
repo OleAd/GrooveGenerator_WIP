@@ -16,7 +16,7 @@ from PyQt5.QtGui import *
 from PyQt5.QtCore import *
 
 import GGfunctions
-import GG_grooveIndex
+#import GG_grooveIndex
 
 # some style
 
@@ -396,11 +396,11 @@ class GrooveGenerator(QWidget):
 		
 		#print('Syncopation Index is: ' + str(round(SI,3)))
 		
-		GI = GG_grooveIndex.grooveIndex(patternA, patternB, events)
-		print(GI)
+		#GI = GG_grooveIndex.grooveIndex(patternA, patternB, events)
+		#print(GI)
 		#print(GI)
 		
-		return hSI, wSI, GI
+		return hSI, wSI#, GI
 		
 	def clear(self):
 		print('Clearing.')
