@@ -16,13 +16,14 @@ from PyQt5.QtGui import *
 from PyQt5.QtCore import *
 
 import GGfunctions
+import GG_grooveIndex
 
 # some style
 
 import qtmodern.styles
 import qtmodern.windows
 
-# Note, make into 32 steps.
+
 
 
 
@@ -273,8 +274,8 @@ class GrooveGenerator(QWidget):
 	def generateRandomPattern(self, verbose=True):
 		# just a simple random pattern with some contraints
 		
-		maxEvents = 20
-		minEvents = 10
+		maxEvents = 24
+		minEvents = 8
 		# collapse over both instruments? Total between 12 and 18?
 		
 		# set the hi-hat first
@@ -395,7 +396,10 @@ class GrooveGenerator(QWidget):
 		
 		#print('Syncopation Index is: ' + str(round(SI,3)))
 		
-		return hSI, wSI
+		GI = GG_grooveIndex.grooveIndex(patternA, patternB, events)
+		#print(GI)
+		
+		return hSI, wSI, GI
 		
 	def clear(self):
 		print('Clearing.')
@@ -446,7 +450,7 @@ class GrooveGenerator(QWidget):
 			
 	def report_status(self, status):
 		self.statusBox.setText(status)
-		print(status)
+		#print(status)
 	
 	def processPattern(self):
 		self.report_status('Generating...')
@@ -461,8 +465,8 @@ class GrooveGenerator(QWidget):
 		
 		output_array = self.getPattern()
 		
-		print(output_array)
-		print(self.tempoField.text())
+		#print(output_array)
+		#print(self.tempoField.text())
 		tempo = int(self.tempoField.text())
 		loops = int(self.loopButton.value())
 		print('Doing ' + str(loops) + ' loops.')
