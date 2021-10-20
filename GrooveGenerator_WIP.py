@@ -175,6 +175,11 @@ class GrooveGenerator(QWidget):
 		self.SIcalcW = QLabel('N/A')
 		main_grid.addWidget(self.SIcalcW, 5, 6)
 		
+		GIlabel=QLabel('Experimental GI:')
+		main_grid.addWidget(GIlabel, 7, 1)
+		self.GIcalc = QLabel('N/A')
+		main_grid.addWidget(self.GIcalc, 7, 2)
+		
 		
 		
 		# generate button
@@ -397,7 +402,8 @@ class GrooveGenerator(QWidget):
 		#print('Syncopation Index is: ' + str(round(SI,3)))
 		
 		GI = GG_grooveIndex.grooveIndex(patternA, patternB, events)
-		print(GI)
+		self.GIcalc.setText(str(round(GI, 4)))
+		#print(GI)
 		#print(GI)
 		
 		return hSI, wSI, GI

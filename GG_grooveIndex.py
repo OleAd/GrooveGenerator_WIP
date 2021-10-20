@@ -58,10 +58,14 @@ def grooveIndex(patternA, patternB,events):
 	snareWeights = scipy.io.loadmat('snareWeighted.mat')['snareWeighted']
 	kickWeights = scipy.io.loadmat('kickWeighted.mat')['kickWeighted']
 	
+	weights = scipy.io.loadmat('generalWeighted.mat')['weighted']
+	
 	
 	# fold patterns
-	snareWeights = snareWeights[0]
-	kickWeights = kickWeights[0]
+	#snareWeights = snareWeights[0]
+	#kickWeights = kickWeights[0]
+	snareWeights = weights[0]
+	kickWeights = weights[0]
 	
 	firstSnare = snare[0:16]
 	secondSnare = snare[16:33]
