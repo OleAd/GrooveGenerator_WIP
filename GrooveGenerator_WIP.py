@@ -218,10 +218,25 @@ class GrooveGenerator(QWidget):
 	
 	def savePattern(self):
 		pattern = self.getPattern()
-		colNames = ['hihat', 'snare', 'kick']
+		
+		patternA = pattern[1,] # snare
+		patternB = pattern[2,] # kick
+		
+		output = self.syncopationIndexHoesl(patternA, patternB)
+		hWeights = output[1]
+		output = self.syncopationIndexWitek(patternA, patternB)
+		wWeights = output[1]
+		
+		
+		
+		
+		
+		colNames = ['hihat', 'snare', 'kick', 'hWeights', 'wWeights']
 		data = {'hihat':pattern[0,],
 		  'snare':pattern[1,],
-		  'kick':pattern[2,]}
+		  'kick':pattern[2,],
+		  'hWeights':hWeights,
+		  'wWeights':wWeights}
 		pattern_df = pd.DataFrame(data).T
 		
 		name = QFileDialog.getSaveFileName(self, 'Save File', filter='*.csv')
@@ -243,13 +258,15 @@ class GrooveGenerator(QWidget):
 		try:
 			pattern = pd.read_csv(name[0], index_col=0)
 			#print(pattern)
-			pattern_np = pattern.to_numpy().flatten()
+			pattern_np = pattern.to_numpy()
+			pattern_np = pattern_np[0:3,].flatten()
 			
 			assert len(pattern_np) == stepNumbers * stepChannels
 			
 			for n, button in enumerate(self.metro_group.buttons()):
 				button.setChecked(bool(pattern_np[n]))
 			self.report_status('Loaded pattern')
+			self.calculate()
 		except:
 			print('Loading file failed')
 			self.report_status('Loading pattern failed')
@@ -274,33 +291,14 @@ class GrooveGenerator(QWidget):
 	def generateRandomPattern(self, verbose=True):
 		# just a simple random pattern with some contraints
 		
-		maxEvents = 24
-		minEvents = 8
+		maxEvents = 20
+		minEvents = 10
 		# collapse over both instruments? Total between 12 and 18?
 		
 		# set the hi-hat first
 		hihat = np.array([1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0,
 		        1, 0, 1, 0, 1, 0, 1, 0, 1, 0])
-		
-		'''
-		# generate snare
-		# need to bias towards not generating events it seems
-		generate = True
-		while generate:
-			#snare = np.random.randint(0, 1+1, 32)
-			snare = np.round(1-np.random.power(1,32)).astype(int)
-			if sum(snare) >= minEvents and sum(snare) <= maxEvents:
-				generate = False
-				
-		# generate kick
-		# need to bias towards not generating events it seems
-		generate = True
-		while generate:
-			#kick = np.random.randint(0, 1+1, 32)
-			kick = np.round(1-np.random.power(1,32)).astype(int)
-			if sum(kick) >= minEvents and sum(kick) <= maxEvents:
-				generate = False
-		'''
+
 		# now generating them both together
 		generate = True
 		while generate:
@@ -385,8 +383,10 @@ class GrooveGenerator(QWidget):
 		patternA = pattern[1,] # snare
 		patternB = pattern[2,] # kick
 		
-		hSI = self.syncopationIndexHoesl(patternA, patternB)
-		wSI = self.syncopationIndexWitek(patternA, patternB)
+		output = self.syncopationIndexHoesl(patternA, patternB)
+		hSI = output[0]
+		output = self.syncopationIndexWitek(patternA, patternB)
+		wSI = output[0]
 
 		self.SIcalcH.setText(str(round(hSI,3)))
 		self.SIcalcW.setText(str(round(wSI,3)))
@@ -397,6 +397,7 @@ class GrooveGenerator(QWidget):
 		#print('Syncopation Index is: ' + str(round(SI,3)))
 		
 		GI = GG_grooveIndex.grooveIndex(patternA, patternB, events)
+		print(GI)
 		#print(GI)
 		
 		return hSI, wSI, GI
@@ -514,6 +515,7 @@ class GrooveGenerator(QWidget):
 			return j
 		
 		def syncopation(s,b,w,B):
+			w_out = np.zeros(32, dtype = float)
 			c = 2.8 # optimized parameter that 'governs the relationship between metric weight'
 			d = 1.6 # two-stream syncopation factor, equals d when both instruments are silent on i, otherwise 0
 			h = 1.32 # scaling factor, chosen such that the slope of the linear link function (with perceived syncopation)
@@ -522,16 +524,19 @@ class GrooveGenerator(QWidget):
 			for i in range(1,n): 
 				j = phi(s,w,i)
 				k = phi(b,w,i)
-				S = S + (delta(w[i],w[k])*delta(b[k],b[i])*(c**(w[i])-c**(w[k]))
-		              +delta(w[i],w[j])*delta(s[j],s[i])*(c**(w[i])-c**(w[j])))*d**(delta(1,s[i]+b[i]))
-			return S/B*h
+				w_out[i] = (delta(w[i],w[k])*delta(b[k],b[i])*(c**(w[i])-c**(w[k]))
+              +delta(w[i],w[j])*delta(s[j],s[i])*(c**(w[i])-c**(w[j])))*d**(delta(1,s[i]+b[i]))
+			
+			S = sum(w_out)
+			return S/B*h, w_out
 		
 		# weights.
 		w = (0, -3,-2, -3, -1, -3, -2, -3, -1, -3, -2, -3, -1,-3, -2, -3, 0, -3,-2, -3, -1, -3, -2, -3, -1, -3, -2, -3, -1,-3, -2, -3)
 		
-		SI = syncopation(patternA,patternB,w,32)
+		output = syncopation(patternA,patternB,w,32)
+		
 
-		return SI
+		return output
 	
 	
 	def syncopationIndexWitek(self, patternA, patternB):
@@ -552,21 +557,27 @@ class GrooveGenerator(QWidget):
 				j = i - 1 - 3*(delta(a[i-4],a[i-3])*delta(w[i-4],w[i-3])*delta(a[i-4],a[i-2])*delta(w[i-4],w[i-2])*delta(a[i-4],a[i-1])*delta(w[i-4],w[i-1]))
 			return j
 		
-		n = len(w)
-		S = 0
-		for i in range(1, n):
-			j = phi(patternA,w,i)
-			k = phi(patternB,w,i)
-			Swb = delta(w[i],w[k])*delta(patternB[k],patternB[i])
-			Sws = delta(w[i],w[j])*delta(patternA[j],patternA[i])
-			Swb1 = delta(1, Swb)
-			Wb = w[i] - w[k] + 2 + 3*delta(1,patternA[i]+patternB[i])
-			Ws = w[i] - w[j] + 1 + 4*delta(1,patternA[i]+patternB[i])
-			S = S + Swb*Wb + Sws*Ws*Swb1
-			
-		SI = S
+		def syncopation(patternA, patternB, w, B):
+			w_out = np.zeros(32, dtype=int)
+			n = len(w)
+			S = 0
+			for i in range(1,n):
+				j = phi(patternA, w, i)
+				k = phi(patternB, w, i)
+				Swb = delta(w[i],w[k])*delta(patternB[k],patternB[i])
+				Sws = delta(w[i],w[j])*delta(patternA[j],patternA[i])
+				Swb1 = delta(1, Swb)
+				Wb = w[i] - w[k] + 2 + 3*delta(1,patternA[i]+patternB[i])
+				Ws = w[i] - w[j] + 1 + 4*delta(1,patternA[i]+patternB[i])
+				
+				w_out[i] = Swb*Wb + Sws*Ws*Swb1
+			S = sum(w_out)
+			return S, w_out
 		
-		return SI
+		output = syncopation(patternA, patternB, w, 32)
+		
+		
+		return output
 		
   
 
