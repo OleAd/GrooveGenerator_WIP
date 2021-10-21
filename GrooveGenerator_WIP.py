@@ -23,6 +23,14 @@ import GGfunctions
 import qtmodern.styles
 import qtmodern.windows
 
+from pathlib import Path
+
+root = Path()
+if getattr(sys, 'frozen', False):
+    root = Path(sys._MEIPASS)
+    qtmodern.styles._STYLESHEET = root / 'qtmodern/resources/style.qss'
+    qtmodern.windows._FL_STYLESHEET = root / 'qtmodern/resources/frameless.qss'
+
 
 
 
@@ -64,6 +72,9 @@ class GrooveGenerator(QWidget):
 		top_grid.addWidget(statusLabel, 1, 1)
 		self.statusBox = QLabel('Ready.')
 		top_grid.addWidget(self.statusBox, 1, 2, 1, 3)
+		
+		#thanksLabel = QLabel('Heggli - 2021')
+		#top_grid.addWidget(thanksLabel, 1, 6)
 
 		
 		main_grid.addLayout(top_grid, 1, 1, 1, 6)
@@ -200,6 +211,7 @@ class GrooveGenerator(QWidget):
 		self.setLayout(main_grid)
 		self.setWindowTitle("Groove Generator")
 		self.setGeometry(50,50,200,200)
+		self.setWindowIcon(QIcon('icon.ico'))
 		#self.show()
 	
 	
@@ -268,7 +280,7 @@ class GrooveGenerator(QWidget):
 			self.report_status('Loaded pattern')
 			self.calculate()
 		except:
-			print('Loading file failed')
+			#print('Loading file failed')
 			self.report_status('Loading pattern failed')
 			return
 	
@@ -277,7 +289,7 @@ class GrooveGenerator(QWidget):
 		
 		if hihats:
 			events = sum(pattern.flatten())
-			print(events)
+			#print(events)
 		else:
 			snares = pattern[1,]
 			kicks = pattern[2,]
@@ -403,13 +415,13 @@ class GrooveGenerator(QWidget):
 		return hSI, wSI#, GI
 		
 	def clear(self):
-		print('Clearing.')
+		#print('Clearing.')
 		for n, button in enumerate(self.metro_group.buttons()):
 			button.setChecked(False)
 			
 			
 	def hihat_on(self):
-		print('Hihatting.')
+		#print('Hihatting.')
 		step=True
 		for n, button in enumerate(self.metro_group.buttons()):			
 			if n<32:
@@ -420,7 +432,7 @@ class GrooveGenerator(QWidget):
 					step = True
 				
 	def kick_on(self):
-		print('kicking.')
+		#print('kicking.')
 		step = True
 		count = 0
 		for n, button in enumerate(self.metro_group.buttons()):
@@ -435,7 +447,7 @@ class GrooveGenerator(QWidget):
 					step = True
 					
 	def snare_on(self):
-		print('kicking.')
+		#print('kicking.')
 		step = False
 		count = 0
 		for n, button in enumerate(self.metro_group.buttons()):
@@ -482,7 +494,7 @@ class GrooveGenerator(QWidget):
 		hSIformatted = '-hSI-' +hSIstring
 		
 		wSIstring = wSIstring.replace('.', '_')
-		wSIformatted = '-hSI-' +wSIstring
+		wSIformatted = '-wSI-' +wSIstring
 		
 		
 		#midiName = 'stimsMidi/' + self.outputName.text() + SIformatted + '.mid'

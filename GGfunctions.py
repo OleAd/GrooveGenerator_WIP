@@ -90,10 +90,19 @@ def generate_midi(inputArray, tempo, loops, saveName):
 	
 	return
 
+def thisPath():
+	thisPath = os.getcwd()
+	thisPath = thisPath + '\\bin\\fluidsynth.exe'
+	thisPath = thisPath.replace('\\', '/')
+	return thisPath
 
 def write_wav(midiName, name):
 	#REPLACE THIS WITH YOUR OWN FLUIDSYNTH
-	fluidsynth = 'C:/Users/olehe/Documents/GitHub/SanderGenerator/fluidsynth-2.2.2/bin/fluidsynth.exe'
+	# Attempting now to autofind path
+	#thisPath = os.getcwd()
+	#print(thisPath)
+	#fluidsynth = 'C:/Users/olehe/Documents/GitHub/SanderGenerator/fluidsynth-2.2.2/bin/fluidsynth.exe'
+	fluidsynth = thisPath()
 	result = subprocess.run([fluidsynth, "-i", "-q", "default.sf2", midiName, "-T", "wav", "-F", name], shell=True)
 	# This doesn't always play nice, but it's solved by simply letting it sleep a bit.
 	# I've not tested without the sleep, so it could possible work without it.

@@ -1,4 +1,7 @@
 __pycache__/
+build/
+dist/
+bin/
 PIPPET-master/
 *.mid
 *.wav
@@ -10,3 +13,7 @@ sync_index.py
 *.pyc
 *.csv
 GG_workscript.py
+build.py
+default.sf2
+GrooveGenerator_WIP.spec
+*.spec
